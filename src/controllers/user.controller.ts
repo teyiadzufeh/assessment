@@ -1,10 +1,10 @@
-import { Controller, Delete, Get, HttpException, Param, Post, Put, Req, Res } from '@nestjs/common';
-import { Prisma} from '@prisma/client';
+import { Controller, Get, HttpException, Param, Post, Put, Req} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import { LoginRequest, UpdateUserType, UserRequest, UserType } from 'src/db/user.schema';
 import { UserService } from 'src/services/user.service';
 
-@Controller('user')
+@Controller('api/v1/user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
