@@ -61,5 +61,3 @@ This project is authored by Teyi Adzufeh.
 ## License
 
 This project is licensed under the ISC License.
-
-Experience with logistics and transport helps as I have provided possible constants in the constants/types.js file.
