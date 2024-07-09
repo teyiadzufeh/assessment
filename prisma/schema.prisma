@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int     @id @default(autoincrement())
+  uuid              String  @unique
+  email             String  @unique
+  email_verified    Boolean @default(false)
+  status            String  @default("active")
+  password          String
+  user_type         String
+  company_name      String?
+  num_of_users      Int?
+  num_of_products   Int?
+  percentage        Decimal?
+  image             String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
