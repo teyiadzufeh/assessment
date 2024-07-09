@@ -10,9 +10,13 @@ It includes building a RESTful API using  NestJS (NodeJS) w/ TS. This project co
 
 To run this project locally, follow these steps:
 
-1. Clone the repository: `git clone https://github.com/teyiadzufeh/noemdek-task-a.git`
-2. Navigate to the project directory: `cd noemdek-task-a`
+1. Clone the repository: `git clone https://github.com/teyiadzufeh/assessment.git`
+2. Navigate to the project directory: `cd assessment`
 3. Install the dependencies: `npm install`
+
+## Documentation
+
+The documentation for this project can be viewed here: [Assessment Postman dOC](https://documenter.getpostman.com/view/20140877/2sA3e2gpZG);
 
 ## Usage
 
