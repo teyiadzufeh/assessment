@@ -80,7 +80,7 @@ export class UserController {
   async updateUser(@Req() req:Request, @Param('id') id:number) : Promise<UserType> {
     try{
       const request:UpdateUserType = req.body;
-      const response = await this.userService.updateUser(request, Number(id));
+      const response = await this.userService.updateUser(request, Number(id), req['user']);
       return response;
     } catch (error) {
       console.log(error);

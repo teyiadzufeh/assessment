@@ -2,15 +2,15 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { Prisma} from '@prisma/client';
 import { prisma } from 'src/db/prisma';
 import { v4 as uuidv4} from "uuid";
-import admin from 'firebase-admin';
-import { createUserWithEmailAndPassword, getAuth, sendEmailVerification, signInWithCredential, signInWithEmailAndPassword } from "firebase/auth"
 import { compare, hash } from 'bcrypt';
-import { auth } from 'src/config/firebase-config';
 import { LoginRequest, UpdateUserType, UserRequest, UserType } from 'src/db/user.schema';
+import { FirebaseAuthService } from './firebase-auth.service';
+import * as admin from 'firebase-admin';
 
 
 @Injectable()
 export class UserService {
+   constructor(private readonly firebaseAuthService: FirebaseAuthService) {}
    async getAllUsers(params: {
        skip?: number;
        take?: number;
@@ -69,24 +69,15 @@ export class UserService {
         company_name
       }
     })
+    const firebaseUser = await this.firebaseAuthService.getUser(email);
+    if (!firebaseUser) await this.firebaseAuthService.createUser(email, password);
 
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    if (userCredential) {
-      sendEmailVerification(auth.currentUser)
-      .then(() => {
-        // Email verification sent!
-        // ...
-        console.log('Sent')
-      });
-    }
     delete newUser.password;
     return newUser;
   }
 
-  async login(params: LoginRequest){
+  async login(params: LoginRequest): Promise<UserType> {
     let {email, password} = params;
-    await signInWithEmailAndPassword(auth, email, password)
-    const loggedInUser = auth.currentUser;
     // check user
     let user = await prisma.user.findUnique({ where: { email } });
 
@@ -100,7 +91,19 @@ export class UserService {
     }
     // user email not verified
     if (user.email_verified == false) {
+      const firebaseUser = await this.firebaseAuthService.getUser(email);
+      if (firebaseUser.emailVerified == true) {
+        await prisma.user.update({
+          where: {
+            email
+          },
+          data: {
+            email_verified: true
+          }
+        })
+      } else {
         throw new HttpException('This account is not verified', 400);
+      }
     }
 
     // compare password 
@@ -113,17 +116,19 @@ export class UserService {
 
     delete user.password;
 
-    if (loggedInUser) return {
-      user,
-      loggedInUser
-    }
-    else {
-      throw new HttpException('Error logging in', 500);
-    };
+    const loggedInUser = await this.firebaseAuthService.login(email, password);
+    let accessToken = await loggedInUser.getIdToken()
 
+    return {
+      ...user,
+      accessToken
+    }; 
   }
 
-  async updateUser(params: UpdateUserType, userId:number) : Promise<UserType> {
+  async updateUser(params: UpdateUserType, userId:number, user:admin.auth.DecodedIdToken) : Promise<UserType> {
+    const foundUser = await this.getUser(userId);
+    if (foundUser.email != user.email) throw new HttpException(`Cannout update another user's details. Please pass the right user's token`,400);
+    
     let {num_of_users, num_of_products} = params;
     if (!num_of_users || !num_of_products) throw new HttpException('num_of_users and num_of_products are required',400);
     let updatedUser = await prisma.user.update({
@@ -148,21 +153,4 @@ export class UserService {
     return deletedUsers;
   }
 
-  async firebaseTest() {
-    let hashedPassword = await hash('fre3Ed#n',10);
-    const userCredential = await createUserWithEmailAndPassword(auth, 'admin1@atticassess.com', hashedPassword);
-    const newUser = userCredential.user;
-    // let email = 'teyi@gmail.com';
-    // let password = 'fresH@123';
-    // await signInWithEmailAndPassword(auth, email, password)
-    // const newUser = auth.currentUser;
-    // if (newUser) return newUser;
-    // else return {
-    //   "message": "No user signed in"
-    // }
-
-    return newUser;
-  }
 }
-
-export default admin;

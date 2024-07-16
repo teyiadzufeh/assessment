@@ -1,9 +1,10 @@
 import { prisma } from '../src/db/prisma'
 import { v4 as uuidv4 } from 'uuid';
 import {hash} from 'bcrypt';
+import { env } from 'process';
 
 async function main() {
-    let password = await hash('fre3Ed#n',10);
+    let password = await hash(env.USER_A_PASSWORD,10);
     const admin = await prisma.user.upsert({
         where: { email: 'admin1@atticassess.com'},
         update: {},

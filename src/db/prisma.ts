@@ -6,11 +6,6 @@ import { env } from 'process';
 export const prisma =
     globalForPrisma.prisma ||
     new PrismaClient({
-        // omit: {
-        //   user: {
-        //     password: true
-        //   }
-        // },
         log: env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
         errorFormat: 'pretty'
     })

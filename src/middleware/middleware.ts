@@ -1,7 +1,7 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import admin from 'src/services/user.service';
 import { RequestHandler } from 'express';
+import { FirebaseAuthService } from 'src/services/firebase-auth.service';
 import { ZodTypeAny } from 'zod/lib/types';
 
 const now = new Date();
@@ -26,55 +26,30 @@ export function logger(req: Request, res: Response, next: NextFunction) {
   next();
 };
 
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-      const token = req.header('Authorization') ? req.header('Authorization').split('Bearer ')[1] : null;
+@Injectable()
+export class authMiddleware implements NestMiddleware {
+  constructor(private readonly firebaseAuthService: FirebaseAuthService) {}
 
-      if (!token) {
-          next(new HttpException('Invalid token',401))
-          return;
-      }
+  async use(req: Request, res: Response, next: NextFunction) {
+    const token = req.header('Authorization') ? req.header('Authorization').split('Bearer ')[1] : null; // Assume the token is in the Authorization header
 
-      // // Decode the token and parse into json to read the values
-      const decodeToken = admin.auth().verifyIdToken(token);
-      if (decodeToken){
-        console.log(decodeToken);
-        next()
-      } else {
-        next(new HttpException('Invalid token',401))
-        return;
-      }
-      // const userId: string = decodeToken.sub;
+    if (!token) {
+      next(new HttpException('Authorization token not found',401))
+      return;
+    }
 
-      // // reject token if userid is not present in the token
-      // if (!userId) {
-      //     next(new HttpException(401, 'Invalid token'));
-      //     return;
-      // }
-
-      // // check for token expiration
-      // const exp = decodeToken.exp;
-      // if (exp) {
-      //     const date = new Date(0);
-      //     date.setUTCSeconds(decodeToken.exp);
-      //     const offsetSeconds = 0;
-
-      //     // check if the token is expired
-      //     if (!(date.valueOf() > new Date().valueOf() + offsetSeconds * 1000)) {
-      //         logger.info('Token is expired');
-      //         next(new HttpException(401, 'Token is expired'));
-      //     }
-      // }
-
-      // // save user to app locals
-      // req.user = decodeToken;
-
+    try {
+      const decodedToken = await this.firebaseAuthService.verifyIdToken(token);
+      req['user'] = decodedToken; // Attach the decoded token to the request object
       next();
-
-  } catch (error) {
-      // next(new HttpException(401, 'Wrong authtentication token'));
+    } catch (error) {
+        console.log(error)
+        if (error.errorInfo.code == 'auth/id-token-expired') next(new HttpException('Token has expired. Login to get a fresh access token',401))
+        next(new HttpException('Wrong authtentication token', 401));
+    }
   }
 }
+
 export const validationMiddleware = (schema: ZodTypeAny, value: string | 'body' | 'query' | 'params' = 'body')
     : RequestHandler => {
     return (req, res, next) => {

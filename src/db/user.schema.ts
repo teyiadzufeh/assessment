@@ -66,7 +66,8 @@ export type UserType = {
     image?: string | null,
     refresh_token?: string | null,
     createdAt?: Date,
-    updatedAt?: Date
+    updatedAt?: Date,
+    accessToken?: string
 }
 
 export type UpdateUserType = {
