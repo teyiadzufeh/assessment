@@ -7,10 +7,12 @@ import { UserController } from 'src/controllers/user.controller';
 import { authMiddleware, validationMiddleware } from 'src/middleware/middleware';
 import { LoginSchema, UpdateUserSchema, UserSchema } from 'src/db/user.schema';
 import { FirebaseModule } from './firebase.module';
+import { ProductController } from 'src/controllers/product.controller';
+import { ProductSchema } from 'src/db/product.schema';
 
 @Module({
   imports: [ConfigModule.forRoot({ cache: true }), FirebaseModule],
-  controllers: [AppController, UserController],
+  controllers: [AppController, UserController, ProductController],
   providers: [AppService, UserService],
 })
 export class AppModule implements NestModule {
@@ -22,6 +24,10 @@ export class AppModule implements NestModule {
     consumer
       .apply(validationMiddleware(LoginSchema, 'body'))
       .forRoutes({ path: 'api/v1/user/login', method: RequestMethod.POST});
+
+    consumer
+      .apply(authMiddleware, validationMiddleware(ProductSchema, 'body'))
+      .forRoutes({ path: 'api/v1/product/create', method: RequestMethod.POST});
 
     consumer
     .apply(authMiddleware, validationMiddleware(UpdateUserSchema, 'body'))
